@@ -71,7 +71,7 @@ const ProposeTransaction = () => {
     return (
         <div style={globalStyle} className="min-h-screen flex flex-col justify-center items-center px-4 bg-blue-50">
             <h1 style={seanceStyle} className="mb-8 text-center">
-                Seance
+                Séance
             </h1>
             <h2 style={headingStyle} className="text-2xl font-bold mb-8 text-center">
                 Propose a New Transaction to 0x957...d6E1
@@ -145,7 +145,7 @@ const ProposeTransaction = () => {
                     type="submit"
                     className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                    Sign and Push to Arbitration
+                    Submit to Seance
                 </button>
             </form>
         </div>
