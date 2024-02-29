@@ -1,118 +1,155 @@
-import Image from "next/image";
-import { Inter } from "next/font/google";
+// pages/ProposeTransaction.tsx
+import React, { useState, useEffect } from 'react';
 
-const inter = Inter({ subsets: ["latin"] });
+const globalStyle = {
+    fontFamily: '"Inter", sans-serif',
+};
 
-export default function Home() {
-  return (
-    <main
-      className={`flex min-h-screen flex-col items-center justify-between p-24 ${inter.className}`}
-    >
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/pages/index.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700/10 after:dark:from-sky-900 after:dark:via-[#0141ff]/40 before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Discover and deploy boilerplate example Next.js&nbsp;projects.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  );
+// Assuming this is the shape of your ABI items for functions
+interface AbiItem {
+    name: string;
+    type: string;
+    stateMutability?: string;
+    constant?: boolean;
+    inputs: Array<{
+        name: string;
+        type: string;
+    }>;
 }
+const seanceStyle: React.CSSProperties = {
+    color: 'transparent',
+    animation: 'hue 10s infinite linear',
+    backgroundClip: 'text',
+    backgroundImage: 'linear-gradient(45deg, #6e45e2, #88d3ce)',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    fontSize: '8rem', // fontSize should be a string for inline styles
+};
+
+const headingStyle: React.CSSProperties = {
+    backgroundClip: 'text',
+    color: 'transparent',
+    backgroundImage: 'linear-gradient(330.4deg, rgb(68, 188, 240) 4.54%, rgb(114, 152, 248) 59.2%, rgb(160, 153, 255) 148.85%)'
+};
+
+interface FormParameters {
+    [key: string]: string;
+}
+
+const ProposeTransaction = () => {
+    const [abi, setAbi] = useState<AbiItem[]>([]);
+    const [selectedFunction, setSelectedFunction] = useState<AbiItem | null>(null);
+    const [parameters, setParameters] = useState<FormParameters>({});
+    const [comment, setComment] = useState('');
+    const [workflow, setWorkflow] = useState('pessimistic');
+
+    useEffect(() => {
+        // Fetch the ABI from the public folder
+        fetch('/contractABI.json')
+            .then((res) => res.json())
+            .then((data: AbiItem[]) => setAbi(data)) // Cast the response to the AbiItem[]
+            .catch(console.error);
+    }, []);
+
+    const handleFunctionChange = (functionName: string) => {
+        const func = abi.find((f) => f.name === functionName) || null;
+        setSelectedFunction(func);
+        setParameters({});
+    };
+
+    const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>, paramName: string) => {
+        const { value } = event.target;
+        setParameters((prev) => ({ ...prev, [paramName]: value }));
+    };
+
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        // Here you would handle the submission of the transaction proposal
+        console.log('Submitting proposal:', { selectedFunction, parameters, comment, workflow });
+    };
+
+    return (
+        <div style={globalStyle} className="min-h-screen flex flex-col justify-center items-center px-4 bg-blue-50">
+            <h1 style={seanceStyle} className="mb-8 text-center">
+                Séance
+            </h1>
+            <h2 style={headingStyle} className="text-2xl font-bold mb-8 text-center">
+                Propose a New Transaction to 0x957...d6E1
+            </h2>
+            <form onSubmit={handleSubmit} className="w-full max-w-lg bg-white shadow-2xl border-1.5 border-blue-200 rounded-xl p-8 space-y-6">
+
+                <div>
+                    <label htmlFor="function" className="block text-sm font-semibold text-gray-600">Function</label>
+                    <select
+                        id="function"
+                        value={selectedFunction?.name || ''}
+                        onChange={(e) => handleFunctionChange(e.target.value)}
+                        className="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm text-gray-800 focus:ring-blue-500 focus:border-blue-500 py-2 px-2"
+                    >
+                        <option value="">Select Function</option>
+                        {abi.filter((item) =>
+                            item.type === 'function' &&
+                            item.stateMutability !== 'view' &&
+                            item.stateMutability !== 'pure' &&
+                            !item.constant // Exclude constant functions, which are typically 'view' or 'pure'
+                        ).map((func) => (
+                            <option key={func.name} value={func.name}>{func.name}</option>
+                        ))}
+                    </select>
+                </div>
+                {selectedFunction && selectedFunction.inputs.map((input, index) => (
+                    <div key={index} className="ml-4">
+                        <label
+                            htmlFor={`param-${index}`}
+                            className="block text-sm font-semibold text-gray-400" // 'font-semibold' for chubbier text and 'text-gray-900' for very dark grey
+                        >{input.name} ({input.type})</label>
+                        <input
+                            type="text"
+                            id={`param-${index}`}
+                            value={parameters[input.name] || ''}
+                            onChange={(e) => handleInputChange(e, input.name)}
+                            className="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm text-gray-800 focus:ring-blue-500 focus:border-blue-500 py-2 px-2"
+                        />
+                    </div>
+                ))}
+                <div>
+                    <label htmlFor="comment" className="block text-sm font-semibold text-gray-600">Comment</label>
+                    <textarea
+                        id="comment"
+                        value={comment}
+                        placeholder='This is a transaction to update the challenge period of the contract from 5 to 3.5 days...'
+                        onChange={(e) => setComment(e.target.value)}
+                        className="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm text-gray-800 focus:ring-blue-500 focus:border-blue-500 py-2 px-2"
+                    ></textarea>
+                </div>
+                <div className="flex gap-4">
+                    <div
+                        className={`flex-1 cursor-pointer p-4 border-2 ${workflow === 'optimistic' ? 'border-blue-300' : 'border-gray-300'
+                            } rounded-lg shadow-sm transition duration-300 ease-in-out transform hover:-translate-y-1`}
+                        onClick={() => setWorkflow('optimistic')}
+                    >
+                        <h3 className="font-medium text-gray-800">Optimistic</h3>
+                        <p className="text-sm text-gray-500">Assumes actions are honest</p>
+                    </div>
+
+                    <div
+                        className={`flex-1 cursor-pointer p-4 border-2 ${workflow === 'pessimistic' ? 'border-blue-300' : 'border-gray-300'
+                            } rounded-lg shadow-sm transition duration-300 ease-in-out transform hover:-translate-y-1`}
+                        onClick={() => setWorkflow('pessimistic')}
+                    >
+                        <h3 className="font-medium text-gray-800">Pessimistic</h3>
+                        <p className="text-sm text-gray-500">Assumes actions may be dishonest</p>
+                    </div>
+                </div>
+                <button
+                    type="submit"
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                    Submit to Seance
+                </button>
+            </form>
+        </div>
+    );
+};
+
+export default ProposeTransaction;
