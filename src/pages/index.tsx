@@ -68,6 +68,30 @@ const ProposeTransaction = () => {
     console.log('Submitting proposal:', { selectedFunction, parameters, comment, workflow });
   };
 
+  const Tooltip = ({ children, text }) => {
+    const [isTooltipVisible, setTooltipVisible] = useState(false);
+
+    return (
+      <span className="relative inline group">
+        <span
+          onMouseEnter={() => setTooltipVisible(true)}
+          onMouseLeave={() => setTooltipVisible(false)}
+          className="cursor-pointer"
+        >
+          {children}
+        </span>
+        {isTooltipVisible && (
+          <div className="absolute bottom-0 flex-col items-center hidden mb-6 group-hover:flex">
+            <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-black shadow-lg rounded-md">
+              {text}
+            </span>
+            <div className="w-3 h-3 -mt-2 rotate-45 bg-black"></div>
+          </div>
+        )}
+      </span>
+    );
+  };
+
   return (
     <div style={globalStyle} className="min-h-screen flex flex-col justify-center items-center px-4 bg-blue-50">
       <h1 style={seanceStyle} className="mb-8 text-center">
@@ -79,7 +103,9 @@ const ProposeTransaction = () => {
       <form onSubmit={handleSubmit} className="w-full max-w-lg bg-white shadow-2xl border-1.5 border-blue-200 rounded-xl p-8 space-y-6">
 
         <div>
-          <label htmlFor="function" className="block text-sm font-semibold text-gray-600">Function</label>
+          <Tooltip text={`Retrieved from ABI record of the root (sub)DNS`}>
+            <label htmlFor="function" className="block text-sm font-semibold text-gray-600">Function</label>
+          </Tooltip>
           <select
             id="function"
             value={selectedFunction?.name || ''}
@@ -113,7 +139,9 @@ const ProposeTransaction = () => {
           </div>
         ))}
         <div>
-          <label htmlFor="comment" className="block text-sm font-semibold text-gray-600">Comment</label>
+          <Tooltip text={`Describes what the transaction is for and is emitted as 'evidence'`}>
+            <label htmlFor="comment" className="block text-sm font-semibold text-gray-600">Comment</label>
+          </Tooltip>
           <textarea
             id="comment"
             value={comment}
@@ -122,16 +150,21 @@ const ProposeTransaction = () => {
             className="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm text-gray-800 focus:ring-blue-500 focus:border-blue-500 py-2 px-2"
           ></textarea>
         </div>
-        <label htmlFor="function" className="block text-sm font-semibold text-gray-600">Verification mode</label>
+
+        <label htmlFor="function" className="block text-sm font-semibold text-gray-600"><Tooltip text={`Decides whether the transaction goes optimistically to Reality.eth or UMA, or straight to Arbitration.`}>Verification mechanism </Tooltip><Tooltip text={`Configured as this Seance arbitrable contract's metaevidence.`}>
+          <span className='block text-sm font-medium text-gray-300'>(<a href='https://ipfs.kleros.io/ipfs/QmQV4YmtAxBRZGM54zET9HbBJBPhuC5z248NyQscD6WE52/metaEvidence.json'>See policy</a>)</span>
+        </Tooltip></label>
+
+
         <div className="flex gap-4">
 
           <div
-            className={`flex-1 cursor-pointer p-4 border-2 ${workflow === 'optimistic' ? 'border-blue-500' : 'border-gray-300'
+            className={`flex-1 items-center cursor-pointer p-4 border-2 ${workflow === 'optimistic' ? 'border-blue-500' : 'border-gray-300'
               } rounded-lg shadow-sm transition duration-300 ease-in-out transform hover:-translate-y-1`}
             onClick={() => setWorkflow('optimistic')}
           >
-            <h3 className="font-medium text-gray-800">Optimistic</h3>
-            <p className="text-sm text-gray-500">Requires a deposit of <b>3 ETH</b>. If you get challenged within 5 days and lose, you lose everything to the challenger. Otherwise you get the entire deposit back.</p>
+            <h2 className="font-bold text-gray-800">Optimistic</h2>
+            <p className="text-sm text-gray-500"><b>Deposit 3 ETH</b><br />If challenged within 5 days and you lose the dispute, you forfeit the deposit to the challenger.<br />Otherwise, the deposit is returned and the transaction proceeds.</p>
           </div>
 
           <div
@@ -139,8 +172,8 @@ const ProposeTransaction = () => {
               } rounded-lg shadow-sm transition duration-300 ease-in-out transform hover:-translate-y-1`}
             onClick={() => setWorkflow('pessimistic')}
           >
-            <h3 className="font-medium text-gray-800">Pessimistic</h3>
-            <p className="text-sm text-gray-500">Costs a fixed fee of <b>0.06 ETH</b>, paid to the jurors of Kleros. If the ruling is in your favour, transaction can be executed.</p>
+            <h2 className="font-bold text-gray-800">Pessimistic</h2>
+            <p className="text-sm text-gray-500"><b>Pay 0.06 ETH</b><br />The transaction goes directly into arbitration in Kleros Court.<br/>If the Kleros jurors rule in your favor.</p>
           </div>
         </div>
         <button
