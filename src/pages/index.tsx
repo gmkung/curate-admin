@@ -68,7 +68,12 @@ const ProposeTransaction = () => {
     console.log('Submitting proposal:', { selectedFunction, parameters, comment, workflow });
   };
 
-  const Tooltip = ({ children, text }) => {
+  interface TooltipProps {
+    children: React.ReactNode; // Assuming children is some react content
+    text: string; // Assuming text is a string
+  }
+
+  const Tooltip: React.FC<TooltipProps> = ({ children, text }) => {
     const [isTooltipVisible, setTooltipVisible] = useState(false);
 
     return (
@@ -173,7 +178,7 @@ const ProposeTransaction = () => {
             onClick={() => setWorkflow('pessimistic')}
           >
             <h2 className="font-bold text-gray-800">Pessimistic</h2>
-            <p className="text-sm text-gray-500"><b>Pay 0.06 ETH</b><br />The transaction goes directly into arbitration in Kleros Court.<br/>If the Kleros jurors rule in your favor.</p>
+            <p className="text-sm text-gray-500"><b>Pay 0.06 ETH</b><br />The transaction goes directly into arbitration in Kleros Court.<br />If the Kleros jurors rule in your favor.</p>
           </div>
         </div>
         <button
