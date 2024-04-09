@@ -1,5 +1,5 @@
 // pages/ProposeTransaction.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 
 const globalStyle = {
   fontFamily: '"Inter", sans-serif',
@@ -15,6 +15,11 @@ interface AbiItem {
     name: string;
     type: string;
   }>;
+}
+
+interface QueryResponse {
+  data: any;  // Allows any structure for the data
+  errors?: any[];  // Optionally include errors, assuming they are provided in an array
 }
 const seanceStyle: React.CSSProperties = {
   color: 'transparent',
@@ -42,6 +47,9 @@ const ProposeTransaction = () => {
   const [parameters, setParameters] = useState<FormParameters>({});
   const [comment, setComment] = useState('');
   const [workflow, setWorkflow] = useState('pessimistic');
+  const [file, setFile] = React.useState<File | null>(null);
+  const [ipfsPath, setIpfsPath] = useState(''); // State to hold the IPFS path after uploading
+
 
   useEffect(() => {
     // Fetch the ABI from the public folder
@@ -50,6 +58,26 @@ const ProposeTransaction = () => {
       .then((data: AbiItem[]) => setAbi(data)) // Cast the response to the AbiItem[]
       .catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (selectedFunction?.name === 'changeArbitrationParams') {
+      fetchKlerosData(`{
+        lregistry(id:"0x957a53a994860be4750810131d9c876b2f52d6e1"){
+          registrationMetaEvidence{URI}
+          clearingMetaEvidence{URI}
+        }
+      }`).then((response) => {
+        const { data } = response;
+        if (data && data.lregistry) {
+          setParameters(prevParams => ({
+            ...prevParams,
+            _registrationMetaEvidence: data.lregistry.registrationMetaEvidence.URI,
+            _clearingMetaEvidence: data.lregistry.clearingMetaEvidence.URI,
+          }));
+        }
+      }).catch(console.error);
+    }
+  }, [selectedFunction]);
 
   const handleFunctionChange = (functionName: string) => {
     const func = abi.find((f) => f.name === functionName) || null;
@@ -67,6 +95,135 @@ const ProposeTransaction = () => {
     // Here you would handle the submission of the transaction proposal
     console.log('Submitting proposal:', { selectedFunction, parameters, comment, workflow });
   };
+
+  async function fetchKlerosData(query: string): Promise<QueryResponse> {
+    const response = await fetch('https://api.thegraph.com/subgraphs/name/kleros/legacy-curate-xdai', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({ query }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  const postJSONtoKlerosIPFS = async (buffer: ArrayBuffer) => {
+    const final_dict = {
+      "fileName": "new.pdf",
+      // Directly use the buffer array without converting it to JSON first
+      "buffer": { "type": "Buffer", "data": Array.from(new Uint8Array(buffer)) }
+    };
+
+    const response = await fetch("https://ipfs.kleros.io/add", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(final_dict)
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log("/ipfs/" + data.data[0].hash)
+      return "/ipfs/" + data.data[0].hash;
+    } else {
+      throw new Error("Failed to upload to IPFS");
+    }
+  };
+
+  const uploadToIPFS = async (data: Uint8Array, fileName: string) => {
+    const payload = {
+      fileName,
+      buffer: { "type": "Buffer", "data": Array.from(data) },
+    };
+
+    const response = await fetch("https://ipfs.kleros.io/add", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.ok) {
+      const responseData = await response.json();
+      console.log("/ipfs/" + responseData.data[0].hash);
+      return "/ipfs/" + responseData.data[0].hash;
+    } else {
+      throw new Error("Failed to upload to IPFS");
+    }
+  };
+
+  const handleMetaEvidenceFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || event.target.files.length === 0) {
+      console.log("No file selected.");
+      return;
+    }
+
+    const selectedFile = event.target.files[0];
+    setFile(selectedFile);
+
+    if (selectedFile.type !== "application/pdf") {
+      console.error("File is not a PDF.");
+      return;
+    }
+
+    const fileReader = new FileReader();
+    fileReader.readAsArrayBuffer(selectedFile);
+    fileReader.onload = async (e: ProgressEvent<FileReader>) => {
+      const arrayBuffer = e.target?.result;
+      if (arrayBuffer instanceof ArrayBuffer) {
+        try {
+          // Upload the PDF to IPFS
+          const binaryData = new Uint8Array(arrayBuffer);
+          const ipfsResultPath = await uploadToIPFS(binaryData, 'policy.pdf');
+          setIpfsPath(ipfsResultPath);
+          console.log('File uploaded to IPFS at:', ipfsResultPath);
+
+          const updateAndUploadMetaEvidence = async (metaEvidenceUri: string) => {
+            const metaEvidenceRes = await fetch("https://ipfs.kleros.io"+metaEvidenceUri);
+            const metaEvidenceJson = await metaEvidenceRes.json();
+            metaEvidenceJson.fileURI = ipfsResultPath;
+            const jsonStr = JSON.stringify(metaEvidenceJson);
+            const jsonData = new TextEncoder().encode(jsonStr);
+            return await uploadToIPFS(jsonData, "metaevidence.json");
+          };
+
+          interface MetaEvidenceParameters {
+            _clearingMetaEvidence?: string;
+            _registrationMetaEvidence?: string;
+          }
+          const metaEvidencesToUpdate: MetaEvidenceParameters = {};
+          if (selectedFunction && selectedFunction.inputs.some(input => input.name === '_clearingMetaEvidence')) {
+            const clearingMetaEvidencePath = await updateAndUploadMetaEvidence(parameters['_clearingMetaEvidence']!);
+            metaEvidencesToUpdate['_clearingMetaEvidence'] = clearingMetaEvidencePath;
+          }
+          if (selectedFunction && selectedFunction.inputs.some(input => input.name === '_registrationMetaEvidence')) {
+            const registrationMetaEvidencePath = await updateAndUploadMetaEvidence(parameters['_registrationMetaEvidence']!);
+            metaEvidencesToUpdate['_registrationMetaEvidence'] = registrationMetaEvidencePath;
+          }
+
+          // Update parameters with new IPFS hashes
+          setParameters(prevParams => ({
+            ...prevParams,
+            ...metaEvidencesToUpdate
+          }));
+
+          console.log('MetaEvidence updated and uploaded to IPFS:', metaEvidencesToUpdate);
+        } catch (error) {
+          console.error('Error uploading file to IPFS or updating MetaEvidence:', error);
+        }
+      }
+    };
+
+    fileReader.onerror = (e) => {
+      console.error('FileReader error:', e);
+    };
+  };
+
+
 
   interface TooltipProps {
     children: React.ReactNode; // Assuming children is some react content
@@ -100,7 +257,7 @@ const ProposeTransaction = () => {
   return (
     <div style={globalStyle} className="min-h-screen flex flex-col justify-center items-center px-4 bg-blue-50">
       <h1 style={seanceStyle} className="mb-8 text-center">
-        Séance
+        Curate Admin Panel
       </h1>
       <h2 style={headingStyle} className="text-2xl font-bold mb-8 text-center">
         Permissionlessly propose a new transaction to 0x957...d6E1
@@ -155,32 +312,16 @@ const ProposeTransaction = () => {
             className="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm text-gray-800 focus:ring-blue-500 focus:border-blue-500 py-2 px-2"
           ></textarea>
         </div>
-
-        <label htmlFor="function" className="block text-sm font-semibold text-gray-600"><Tooltip text={`Decides whether the transaction goes optimistically to Reality.eth or UMA, or straight to Arbitration.`}>Verification mechanism </Tooltip><Tooltip text={`Configured as this Seance arbitrable contract's metaevidence.`}>
-          <span className='block text-sm font-medium text-gray-300'>(<a href='https://ipfs.kleros.io/ipfs/QmQV4YmtAxBRZGM54zET9HbBJBPhuC5z248NyQscD6WE52/metaEvidence.json'>See policy</a>)</span>
-        </Tooltip></label>
-
-
-        <div className="flex gap-4">
-
-          <div
-            className={`flex-1 items-center cursor-pointer p-4 border-2 ${workflow === 'optimistic' ? 'border-blue-500' : 'border-gray-300'
-              } rounded-lg shadow-sm transition duration-300 ease-in-out transform hover:-translate-y-1`}
-            onClick={() => setWorkflow('optimistic')}
-          >
-            <h2 className="font-bold text-gray-800">Optimistic</h2>
-            <p className="text-sm text-gray-500"><b>Deposit 3 ETH</b><br />If challenged within 5 days and you lose the dispute, you forfeit the deposit to the challenger.<br />Otherwise, the deposit is returned and the transaction proceeds.</p>
+        {/* Conditional rendering of the file upload input */}
+        {selectedFunction?.name === 'changeArbitrationParams' && (
+          <div>
+            <label htmlFor="file-upload" className="block text-sm font-semibold text-gray-600">Upload new policy PDF document</label>
+            <input id="file-upload" type="file" onChange={handleMetaEvidenceFileChange} />
+            {/* Optionally display the IPFS path or upload status */}
+            {ipfsPath && <div>File uploaded to IPFS: {ipfsPath}</div>}
           </div>
+        )}
 
-          <div
-            className={`flex-1 cursor-pointer p-4 border-2 ${workflow === 'pessimistic' ? 'border-blue-500' : 'border-gray-300'
-              } rounded-lg shadow-sm transition duration-300 ease-in-out transform hover:-translate-y-1`}
-            onClick={() => setWorkflow('pessimistic')}
-          >
-            <h2 className="font-bold text-gray-800">Pessimistic</h2>
-            <p className="text-sm text-gray-500"><b>Pay 0.06 ETH</b><br />The transaction goes directly into arbitration in Kleros Court.<br />If the Kleros jurors rule in your favor.</p>
-          </div>
-        </div>
         <button
           type="submit"
           className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
