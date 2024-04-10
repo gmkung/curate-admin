@@ -8,6 +8,7 @@ declare global {
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { Contract, ethers } from 'ethers';
 
+
 const globalStyle = {
   fontFamily: '"Inter", sans-serif',
   backgroundColor: '#2a0a4a', // Dark purple background
@@ -61,10 +62,12 @@ const ProposeTransaction = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [editableAddress, setEditableAddress] = useState('');
+  const rpcEndpoint = 'https://rpc.ankr.com/gnosis'; // Change this to your RPC URL
+
 
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
-    const address = queryParams.get('lregistry') || '0x957a53a994860be4750810131d9c876b2f52d6e1'.toLowerCase();
+    const address = queryParams.get('lregistry') || '0x4577BE6550e7eb4b074bDAcbE4dd44c9245a9bF3'.toLowerCase();
     setContractAddress(address);
     setEditableAddress(address); // Initialize editableAddress with the fetched address
   }, []);
@@ -87,8 +90,32 @@ const ProposeTransaction = () => {
       .catch(console.error);
   }, []);
 
+  const fetchDataFromContract = async (functionName: string, args = []) => {
+    const provider = new ethers.JsonRpcProvider(rpcEndpoint);
+    const contract = new ethers.Contract(contractAddress, abi, provider);
+
+    try {
+      const data = await contract[functionName](...args);
+      return data;
+    } catch (error) {
+      console.error(`Error fetching data from ${functionName}:`, error);
+      return null;
+    }
+  };
+
   useEffect(() => {
     if (selectedFunction?.name === 'changeArbitrationParams') {
+      // Fetch arbitrator extra data
+      fetchDataFromContract('arbitratorExtraData').then(arbitratorExtraData => {
+        if (arbitratorExtraData) {
+          setParameters(prevParams => ({
+            ...prevParams,
+            _arbitratorExtraData: arbitratorExtraData,
+          }));
+        }
+      }).catch(console.error);
+
+      // Continue to fetch other necessary data
       fetchKlerosData(`{
         lregistry(id:"${contractAddress}"){
           registrationMetaEvidence{URI}
@@ -100,12 +127,14 @@ const ProposeTransaction = () => {
           setParameters(prevParams => ({
             ...prevParams,
             _registrationMetaEvidence: data.lregistry.registrationMetaEvidence.URI,
+            _arbitrator: "0x9c1da9a04925bdfdedf0f6421bc7eea8305f9002",
             _clearingMetaEvidence: data.lregistry.clearingMetaEvidence.URI,
           }));
         }
       }).catch(console.error);
     }
-  }, [selectedFunction]);
+  }, [selectedFunction, contractAddress]); // Added contractAddress as a dependency
+
 
   const handleFunctionChange = (functionName: string) => {
     const func = abi.find((f) => f.name === functionName) || null;
@@ -313,9 +342,9 @@ const ProposeTransaction = () => {
 
   return (
     <div style={globalStyle} className="min-h-screen flex flex-col justify-center items-center px-4 bg-blue-50">
-      <h1 style={seanceStyle} className="mb-8 text-center">
+      <h2 style={seanceStyle} className="mb-8 text-center">
         Curate Admin Panel
-      </h1>
+      </h2>
       {isEditing ? (
         <div>
           <h3 style={headingStyle} className="text-2xl font-bold mb-8 text-center">Change address to:
@@ -378,8 +407,6 @@ const ProposeTransaction = () => {
           <div>
             <label htmlFor="file-upload" className="block text-sm font-semibold text-gray-600">Upload new policy PDF document</label>
             <input id="file-upload" type="file" onChange={handleMetaEvidenceFileChange} />
-            {/* Optionally display the IPFS path or upload status */}
-            {ipfsPath && <div>File uploaded to IPFS: {ipfsPath}</div>}
           </div>
         )}
 
