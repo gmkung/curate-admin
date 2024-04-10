@@ -8,9 +8,9 @@ declare global {
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { Contract, ethers } from 'ethers';
 
-
 const globalStyle = {
   fontFamily: '"Inter", sans-serif',
+  backgroundColor: '#2a0a4a', // Dark purple background
 };
 
 // Assuming this is the shape of your ABI items for functions
@@ -33,16 +33,16 @@ const seanceStyle: React.CSSProperties = {
   color: 'transparent',
   animation: 'hue 10s infinite linear',
   backgroundClip: 'text',
-  backgroundImage: 'linear-gradient(45deg, #6e45e2, #88d3ce)',
+  backgroundImage: 'linear-gradient(45deg, #9a70ab, #c7a4cf)', // Lighter purple gradient for the text
   fontWeight: 'bold',
   textAlign: 'center',
-  fontSize: '8rem', // fontSize should be a string for inline styles
+  fontSize: '8rem',
 };
 
 const headingStyle: React.CSSProperties = {
   backgroundClip: 'text',
   color: 'transparent',
-  backgroundImage: 'linear-gradient(330.4deg, rgb(68, 188, 240) 4.54%, rgb(114, 152, 248) 59.2%, rgb(160, 153, 255) 148.85%)'
+  backgroundImage: 'linear-gradient(330.4deg, #b39ddb 4.54%, #d1c4e9 59.2%, #e1bee7 148.85%)', // Another lighter purple gradient for the text
 };
 
 interface FormParameters {
