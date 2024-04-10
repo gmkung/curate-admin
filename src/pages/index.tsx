@@ -1,5 +1,13 @@
+declare global {
+  interface Window {
+    ethereum: any;
+  }
+}
+
 // pages/ProposeTransaction.tsx
 import React, { useState, useEffect, ChangeEvent } from 'react';
+import { Contract, ethers } from 'ethers';
+
 
 const globalStyle = {
   fontFamily: '"Inter", sans-serif',
@@ -42,13 +50,33 @@ interface FormParameters {
 }
 
 const ProposeTransaction = () => {
+  const [contractAddress, setContractAddress] = useState('');
+
   const [abi, setAbi] = useState<AbiItem[]>([]);
   const [selectedFunction, setSelectedFunction] = useState<AbiItem | null>(null);
   const [parameters, setParameters] = useState<FormParameters>({});
-  const [comment, setComment] = useState('');
-  const [workflow, setWorkflow] = useState('pessimistic');
+
   const [file, setFile] = React.useState<File | null>(null);
   const [ipfsPath, setIpfsPath] = useState(''); // State to hold the IPFS path after uploading
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editableAddress, setEditableAddress] = useState('');
+
+  useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const address = queryParams.get('lregistry') || '0x957a53a994860be4750810131d9c876b2f52d6e1'.toLowerCase();
+    setContractAddress(address);
+    setEditableAddress(address); // Initialize editableAddress with the fetched address
+  }, []);
+
+  const handleAddressChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setEditableAddress(event.target.value);
+  };
+  const handleAddressBlur = () => {
+    setContractAddress(editableAddress);
+    const newUrl = `${window.location.origin}${window.location.pathname}?lregistry=${editableAddress}`;
+    window.location.href = newUrl;
+  };
 
 
   useEffect(() => {
@@ -62,7 +90,7 @@ const ProposeTransaction = () => {
   useEffect(() => {
     if (selectedFunction?.name === 'changeArbitrationParams') {
       fetchKlerosData(`{
-        lregistry(id:"0x957a53a994860be4750810131d9c876b2f52d6e1"){
+        lregistry(id:"${contractAddress}"){
           registrationMetaEvidence{URI}
           clearingMetaEvidence{URI}
         }
@@ -90,11 +118,40 @@ const ProposeTransaction = () => {
     setParameters((prev) => ({ ...prev, [paramName]: value }));
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Here you would handle the submission of the transaction proposal
-    console.log('Submitting proposal:', { selectedFunction, parameters, comment, workflow });
+
+    if (!selectedFunction) {
+      console.error('No function selected');
+      return;
+    }
+    if (!window.ethereum) {
+      throw new Error("Ethereum provider not found!");
+    }
+
+    // Initialize the provider with the user's Ethereum provider
+    const provider = new ethers.BrowserProvider(window.ethereum);
+
+    // Get the signer from the provider
+    const signer = await provider.getSigner();
+    const contract = new Contract(contractAddress, abi, signer);
+
+    // Prepare the parameters for the function call
+    const functionArgs = selectedFunction.inputs.map(input => parameters[input.name]);
+
+    try {
+      // Send a transaction to execute the selected function with the provided arguments
+      const transactionResponse = await contract[selectedFunction.name](...functionArgs);
+      console.log('Transaction submitted:', transactionResponse);
+
+      // Wait for the transaction to be mined
+      const receipt = await transactionResponse.wait();
+      console.log('Transaction confirmed:', receipt);
+    } catch (error) {
+      console.error('Transaction failed:', error);
+    }
   };
+
 
   async function fetchKlerosData(query: string): Promise<QueryResponse> {
     const response = await fetch('https://api.thegraph.com/subgraphs/name/kleros/legacy-curate-xdai', {
@@ -183,7 +240,7 @@ const ProposeTransaction = () => {
           console.log('File uploaded to IPFS at:', ipfsResultPath);
 
           const updateAndUploadMetaEvidence = async (metaEvidenceUri: string) => {
-            const metaEvidenceRes = await fetch("https://ipfs.kleros.io"+metaEvidenceUri);
+            const metaEvidenceRes = await fetch("https://ipfs.kleros.io" + metaEvidenceUri);
             const metaEvidenceJson = await metaEvidenceRes.json();
             metaEvidenceJson.fileURI = ipfsResultPath;
             const jsonStr = JSON.stringify(metaEvidenceJson);
@@ -259,9 +316,25 @@ const ProposeTransaction = () => {
       <h1 style={seanceStyle} className="mb-8 text-center">
         Curate Admin Panel
       </h1>
-      <h2 style={headingStyle} className="text-2xl font-bold mb-8 text-center">
-        Permissionlessly propose a new transaction to 0x957...d6E1
-      </h2>
+      {isEditing ? (
+        <div>
+          <h3 style={headingStyle} className="text-2xl font-bold mb-8 text-center">Change address to:
+            <input
+              type="text"
+              value={editableAddress}
+              onChange={handleAddressChange}
+              onBlur={handleAddressBlur}
+              className="contract-address-input"
+              autoFocus
+              style={{ color: 'darkgrey' }}  // Inline style for text color
+            /></h3>
+        </div>
+      ) : (
+        <h2 style={headingStyle} className="text-2xl font-bold mb-8 text-center" onClick={() => setIsEditing(true)}>
+          Update or submit data to {`${contractAddress.slice(0, 7)}...${contractAddress.slice(-4)}`}
+        </h2>
+      )}
+
       <form onSubmit={handleSubmit} className="w-full max-w-lg bg-white shadow-2xl border-1.5 border-blue-200 rounded-xl p-8 space-y-6">
 
         <div>
@@ -300,18 +373,6 @@ const ProposeTransaction = () => {
             />
           </div>
         ))}
-        <div>
-          <Tooltip text={`Describes what the transaction is for and is emitted as 'evidence'`}>
-            <label htmlFor="comment" className="block text-sm font-semibold text-gray-600">Comment</label>
-          </Tooltip>
-          <textarea
-            id="comment"
-            value={comment}
-            placeholder='This is a transaction to update the challenge period of the contract from 5 to 3.5 days...'
-            onChange={(e) => setComment(e.target.value)}
-            className="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm text-gray-800 focus:ring-blue-500 focus:border-blue-500 py-2 px-2"
-          ></textarea>
-        </div>
         {/* Conditional rendering of the file upload input */}
         {selectedFunction?.name === 'changeArbitrationParams' && (
           <div>
@@ -326,7 +387,7 @@ const ProposeTransaction = () => {
           type="submit"
           className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
-          Submit to Seance
+          Submit to Curate Contract
         </button>
       </form>
     </div>
