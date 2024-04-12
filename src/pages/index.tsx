@@ -77,7 +77,7 @@ const ProposeTransaction = () => {
   };
   const handleAddressBlur = () => {
     setContractAddress(editableAddress);
-    const newUrl = `${window.location.origin}${window.location.pathname}?lregistry=${editableAddress}`;
+    const newUrl = `${window.location.origin}${window.location.pathname}?lregistry=${editableAddress.toLowerCase()}`;
     window.location.href = newUrl;
   };
 
@@ -117,7 +117,7 @@ const ProposeTransaction = () => {
 
       // Continue to fetch other necessary data
       fetchKlerosData(`{
-        lregistry(id:"${contractAddress}"){
+        lregistry(id:"${contractAddress.toLowerCase()}"){
           registrationMetaEvidence{URI}
           clearingMetaEvidence{URI}
         }
