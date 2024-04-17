@@ -9,6 +9,56 @@ import React, { useState, useEffect, ChangeEvent } from 'react';
 import { Contract, ethers } from 'ethers';
 
 
+import { createWeb3Modal, defaultConfig, useWeb3ModalProvider } from '@web3modal/ethers/react'
+
+// 1. Get projectId
+const projectId = '406598dd2c21a5c4ffcbb4f7ec212c42'
+
+// 2. Set chains
+const gnosis = {
+  chainId: 100,
+  name: 'Gnosis',
+  currency: 'xDAI',
+  explorerUrl: 'https://gnosisscan.io',
+  rpcUrl: 'https://rpc.ankr.com/gnosis'
+}
+
+const mainnet = {
+  chainId: 1,
+  name: 'Ethereum Mainnet',
+  currency: 'ETH',
+  explorerUrl: 'https://etherscan.io',
+  rpcUrl: 'https://rpc.ankr.com/eth'
+}
+
+// 3. Create a metadata object
+const metadata = {
+  name: 'Curate Admin Panel',
+  description: 'An interface for managing Kleros LCurate registries',
+  url: 'https://curate-admin.vercel.app', // origin must match your domain & subdomain
+  icons: ['https://avatars.mywebsite.com/']
+}
+
+// 4. Create Ethers config
+const ethersConfig = defaultConfig({
+  /*Required*/
+  metadata,
+
+  /*Optional*/
+  enableEIP6963: true, // true by default
+  enableInjected: true, // true by default
+  enableCoinbase: true, // true by default
+  rpcUrl: '...', // used for the Coinbase SDK
+  defaultChainId: 1, // used for the Coinbase SDK
+})
+// 5. Create a Web3Modal instance
+createWeb3Modal({
+  ethersConfig,
+  chains: [gnosis, mainnet],
+  projectId,
+  enableAnalytics: true // Optional - defaults to your Cloud configuration
+})
+
 const globalStyle = {
   fontFamily: '"Inter", sans-serif',
   backgroundColor: '#2a0a4a', // Dark purple background
@@ -64,6 +114,8 @@ const ProposeTransaction = () => {
   const [editableAddress, setEditableAddress] = useState('');
   const rpcEndpoint = 'https://rpc.ankr.com/gnosis'; // Change this to your RPC URL
 
+  const { walletProvider } = useWeb3ModalProvider()
+  //const { open } = useWeb3Modal()
 
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
@@ -158,11 +210,18 @@ const ProposeTransaction = () => {
       throw new Error("Ethereum provider not found!");
     }
 
+
+    if (!walletProvider) {
+      console.error("Ethereum provider not found!");
+      return; // Optionally, you could display a user-friendly error message here.
+    }
+
     // Initialize the provider with the user's Ethereum provider
-    const provider = new ethers.BrowserProvider(window.ethereum);
+    const ethersProvider = new ethers.BrowserProvider(walletProvider);
 
     // Get the signer from the provider
-    const signer = await provider.getSigner();
+    const signer = await ethersProvider.getSigner();
+    console.log(signer)
     const contract = new Contract(contractAddress, abi, signer);
 
     // Prepare the parameters for the function call
@@ -409,7 +468,7 @@ const ProposeTransaction = () => {
             <input id="file-upload" type="file" onChange={handleMetaEvidenceFileChange} />
           </div>
         )}
-
+        <w3m-button />
         <button
           type="submit"
           className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
