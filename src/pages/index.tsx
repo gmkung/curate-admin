@@ -242,7 +242,7 @@ const ProposeTransaction = () => {
 
 
   async function fetchKlerosData(query: string): Promise<QueryResponse> {
-    const response = await fetch('https://api.thegraph.com/subgraphs/name/kleros/legacy-curate-xdai', {
+    const response = await fetch('https://api.studio.thegraph.com/query/61738/legacy-curate-gnosis/version/latest', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
