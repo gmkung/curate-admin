@@ -1,14 +1,12 @@
 declare global {
   interface Window {
-    ethereum: any;
+    ethereum?: Record<string, unknown>;
   }
 }
 
 // pages/ProposeTransaction.tsx
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { Contract, ethers } from 'ethers';
-
-
 import { createWeb3Modal, defaultConfig, useWeb3ModalProvider } from '@web3modal/ethers/react'
 
 // 1. Get projectId
@@ -242,7 +240,7 @@ const ProposeTransaction = () => {
 
 
   async function fetchKlerosData(query: string): Promise<QueryResponse> {
-    const response = await fetch('https://api.thegraph.com/subgraphs/name/kleros/legacy-curate-xdai', {
+    const response = await fetch('https://api.studio.thegraph.com/query/61738/legacy-curate-gnosis/version/latest', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -281,23 +279,27 @@ const ProposeTransaction = () => {
   };
 
   const uploadToIPFS = async (data: Uint8Array, fileName: string) => {
-    const payload = {
-      fileName,
-      buffer: { "type": "Buffer", "data": Array.from(data) },
-    };
+    const blob = new Blob([data], { type: 'application/octet-stream' });
+    const formdata = new FormData();
+    formdata.append("data", blob, fileName);
 
-    const response = await fetch("https://ipfs.kleros.io/add", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (response.ok) {
-      const responseData = await response.json();
-      console.log("/ipfs/" + responseData.data[0].hash);
-      return "/ipfs/" + responseData.data[0].hash;
-    } else {
-      throw new Error("Failed to upload to IPFS");
+    try {
+      const response = await fetch("https://kleros-api.netlify.app/.netlify/functions/upload-to-ipfs?operation=file&pinToGraph=false", {
+        method: "POST",
+        body: formdata,
+        redirect: "follow" as RequestRedirect
+      });
+      if (response.ok) {
+        const result = await response.json();
+        const cid = result.cids[0]; // Extract the first CID from the cids array
+        console.log(cid);
+        return cid;
+      } else {
+        throw new Error("Failed to upload to IPFS");
+      }
+    } catch (error) {
+      console.error(error);
+      throw error;
     }
   };
 
