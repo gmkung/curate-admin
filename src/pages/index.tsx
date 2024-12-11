@@ -256,27 +256,6 @@ const ProposeTransaction = () => {
     return response.json();
   }
 
-  const postJSONtoKlerosIPFS = async (buffer: ArrayBuffer) => {
-    const final_dict = {
-      "fileName": "new.pdf",
-      // Directly use the buffer array without converting it to JSON first
-      "buffer": { "type": "Buffer", "data": Array.from(new Uint8Array(buffer)) }
-    };
-
-    const response = await fetch("https://ipfs.kleros.io/add", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(final_dict)
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      console.log("/ipfs/" + data.data[0].hash)
-      return "/ipfs/" + data.data[0].hash;
-    } else {
-      throw new Error("Failed to upload to IPFS");
-    }
-  };
 
   const uploadToIPFS = async (data: Uint8Array, fileName: string) => {
     const blob = new Blob([data], { type: 'application/octet-stream' });
@@ -330,11 +309,12 @@ const ProposeTransaction = () => {
           console.log('File uploaded to IPFS at:', ipfsResultPath);
 
           const updateAndUploadMetaEvidence = async (metaEvidenceUri: string) => {
-            const metaEvidenceRes = await fetch("https://ipfs.kleros.io" + metaEvidenceUri);
+            const metaEvidenceRes = await fetch("https://cdn.kleros.link" + metaEvidenceUri);
             const metaEvidenceJson = await metaEvidenceRes.json();
             metaEvidenceJson.fileURI = ipfsResultPath;
             const jsonStr = JSON.stringify(metaEvidenceJson);
             const jsonData = new TextEncoder().encode(jsonStr);
+            console.log('Uploading new metaevidence to IPFS')
             return await uploadToIPFS(jsonData, "metaevidence.json");
           };
 
@@ -349,6 +329,7 @@ const ProposeTransaction = () => {
           }
           if (selectedFunction && selectedFunction.inputs.some(input => input.name === '_registrationMetaEvidence')) {
             const registrationMetaEvidencePath = await updateAndUploadMetaEvidence(parameters['_registrationMetaEvidence']!);
+            console.log("registrationMetaEvidencePath", registrationMetaEvidencePath)
             metaEvidencesToUpdate['_registrationMetaEvidence'] = registrationMetaEvidencePath;
           }
 
